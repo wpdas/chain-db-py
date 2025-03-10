@@ -1,6 +1,6 @@
 """ChainDB class for the ChainDB Python client."""
 
-from typing import Dict, Any, TypeVar, Generic, Optional, Callable
+from typing import Dict, Any, TypeVar, Generic, Optional, Callable, Type, cast, Union
 from .constants import DEFAULT_API_SERVER, CONNECT, WEB_SOCKET_EVENTS
 from .utils import post
 from .table import Table
@@ -49,21 +49,26 @@ class ChainDB:
         except Exception as e:
             raise Exception(f"Something went wrong with connect operation: {str(e)}")
     
-    async def get_table(self, table_name: str) -> Table:
+    async def get_table(self, table_name: str, model_class: Optional[Type[T]] = None) -> Union[Table, T]:
         """
         Initialize a table, fetching its more updated data.
         
         Args:
             table_name: Name of the table.
+            model_class: Optional class to cast the table to.
         
         Returns:
-            Table instance.
+            Table instance, optionally cast to the specified model class.
         
         Raises:
             Exception: If the get_table fails.
         """
         table = Table(table_name, self)
         await table.refetch()
+        
+        if model_class is not None:
+            return cast(model_class, table)
+        
         return table
     
     def events(self):

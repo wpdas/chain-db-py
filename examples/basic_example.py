@@ -1,12 +1,14 @@
 """Basic example of using the ChainDB Python client."""
 
 import asyncio
-from chain_db import connect, Connection, EventTypes
+from chain_db import connect, Connection, EventTypes, TableModel
+from typing import Dict, Any
 
-# Define a class for your table structure (optional, for type hints)
-class GreetingTable:
+# Define a class for your table structure by extending TableModel
+class GreetingTable(TableModel):
     def __init__(self):
-        self.greeting = "Hi"
+        super().__init__()  # Initialize the base class
+        self.greeting = "Hi"  # Add custom properties
 
 async def main():
     # Connect to ChainDB
@@ -18,9 +20,9 @@ async def main():
     )
     db = await connect(connection)
     
-    # Get a table
-    greeting_table = await db.get_table("greeting")
-    print(f"Current document: {greeting_table.currentDoc}")
+    # Get a table with type casting using the model class
+    greeting_table = await db.get_table("greeting", GreetingTable)
+    print(f"Current document: {greeting_table.current_doc}")
     
     # Subscribe to table update events
     async def on_table_update(event_data):
@@ -30,7 +32,7 @@ async def main():
     await db.events().subscribe(EventTypes.TABLE_UPDATE, on_table_update)
     
     # Modify and persist data
-    greeting_table.currentDoc["greeting"] = "Hello, ChainDB from Python!"
+    greeting_table.current_doc["greeting"] = "Hello, ChainDB from Python!"
     result = await greeting_table.persist()
     
     # Get the doc_id of the newly created document
@@ -41,6 +43,7 @@ async def main():
     print(f"Current document ID: {current_doc_id}")
     
     # Get a specific document by its ID
+    # We can use the ID we just got from the persist operation
     specific_doc = await greeting_table.get_doc(current_doc_id)
     
     # Access the document data and ID
@@ -48,19 +51,12 @@ async def main():
     print(f"Specific document ID: {specific_doc.doc_id}")
     
     # Update a specific document
-    specific_doc.doc["greeting"] = "Updated from Python!"
+    specific_doc.doc["greeting"] = "Updated specific document"
     await specific_doc.update()
-    
-    # Refetch the document to get the latest data
-    await specific_doc.refetch()
-    print(f"Updated document: {specific_doc.doc}")
     
     # Get the last 10 changes
     history = await greeting_table.get_history(10)
     print(f"History: {history}")
-    
-    # Close WebSocket connection when done
-    await db.events().close_events()
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -5,6 +5,7 @@ from .table import Table
 from .table_doc import TableDoc
 from .types import Connection, BasicResponse, EventData, EventCallback, Criteria, CriteriaAdvanced
 from .constants import EventTypes, Operators
+from .models import TableModel, TableDocModel
 
 __all__ = [
     'ChainDB',
@@ -18,7 +19,9 @@ __all__ = [
     'Criteria',
     'CriteriaAdvanced',
     'EventTypes',
-    'Operators'
+    'Operators',
+    'TableModel',
+    'TableDocModel'
 ]
 
 __version__ = '1.0.0'

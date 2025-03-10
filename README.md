@@ -45,14 +45,47 @@ asyncio.run(main())
 greeting_table = await db.get_table("greeting")
 
 # Access the current document data (the last record stored in the table)
-print(greeting_table.currentDoc)  # e.g., {"greeting": "Hello"}
+print(greeting_table.current_doc)  # e.g., {"greeting": "Hello"}
 ```
+
+### Using Type Hints with Model Classes
+
+You can define model classes to get better type hints and IDE support. Chain DB provides base model classes that you can extend:
+
+```python
+from chain_db import TableModel, connect, Connection
+
+# Define a model class by extending TableModel
+class GreetingTable(TableModel):
+    def __init__(self):
+        super().__init__()  # Initialize the base class
+        self.greeting = "Hi"  # Add custom properties
+
+# Connect to Chain DB
+connection = Connection(
+    server="http://localhost:2818",
+    database="my-database",
+    user="root",
+    password="1234"
+)
+db = await connect(connection)
+
+# Get a table with type casting using the model class
+greeting_table = await db.get_table("greeting", GreetingTable)
+
+# Now your IDE will provide autocompletion and type checking
+print(greeting_table.current_doc)
+greeting_table.current_doc["greeting"] = "Hello, Chain DB!"
+result = await greeting_table.persist()
+```
+
+By extending `TableModel`, your class automatically inherits all the method signatures from the Chain DB library, providing proper type hints for all available methods.
 
 ### Modifying and Persisting Data
 
 ```python
 # Modify the current document data
-greeting_table.currentDoc["greeting"] = "Hello, Chain DB!"
+greeting_table.current_doc["greeting"] = "Hello, Chain DB!"
 
 # Persist changes to database (creates a new record with a new doc_id)
 result = await greeting_table.persist()
@@ -160,6 +193,29 @@ users = await user_table.find_where(
 )
 ```
 
+You can also use model classes with queries for better type hints:
+
+```python
+from chain_db import TableModel
+
+# Define a model class for your user table by extending TableModel
+class UserTable(TableModel):
+    def __init__(self):
+        super().__init__()
+        # Add custom properties if needed
+        self.user_count = 0
+
+# Get a table with type casting
+user_table = await db.get_table("users", UserTable)
+
+# Now your IDE will provide autocompletion and type checking for all methods
+users = await user_table.find_where(
+    {"active": True, "name": "John"},
+    10,
+    True
+)
+```
+
 #### Advanced Queries
 
 ```python
@@ -215,7 +271,13 @@ await greeting_table.refetch()
 
 ```python
 import asyncio
-from chain_db import connect, Connection, EventTypes
+from chain_db import connect, Connection, EventTypes, TableModel
+
+# Define a model class for your table by extending TableModel
+class GreetingTable(TableModel):
+    def __init__(self):
+        super().__init__()  # Initialize the base class
+        self.greeting = "Hi"  # Add custom properties
 
 async def main():
     # Connect to Chain DB
@@ -227,9 +289,9 @@ async def main():
     )
     db = await connect(connection)
 
-    # Get the "greeting" table
-    greeting_table = await db.get_table("greeting")
-    print(f"Current document: {greeting_table.currentDoc}")  # e.g., {"greeting": "Hi"}
+    # Get the "greeting" table with type casting
+    greeting_table = await db.get_table("greeting", GreetingTable)
+    print(f"Current document: {greeting_table.current_doc}")  # e.g., {"greeting": "Hi"}
 
     # Subscribe to table update events
     async def on_table_update(event_data):
@@ -239,7 +301,7 @@ async def main():
     await db.events().subscribe(EventTypes.TABLE_UPDATE, on_table_update)
 
     # Modify and persist data
-    greeting_table.currentDoc["greeting"] = "Hello my dear!"
+    greeting_table.current_doc["greeting"] = "Hello my dear!"
     result = await greeting_table.persist()  # Data is persisted on database
 
     # Get the doc_id of the newly created document
@@ -250,7 +312,7 @@ async def main():
     print(f"Current document ID: {current_doc_id}")
 
     # See the updated values
-    print(f"Updated document: {greeting_table.currentDoc}")  # {"greeting": "Hello my dear!", "doc_id": "..."}
+    print(f"Updated document: {greeting_table.current_doc}")  # {"greeting": "Hello my dear!", "doc_id": "..."}
 
     # Get a specific document by its ID
     # We can use the ID we just got from the persist operation
@@ -286,6 +348,54 @@ if __name__ == "__main__":
 ```
 
 ## Development
+
+### Type Hints in Python
+
+Chain DB Python client supports type hints through Python's typing system. This provides several benefits:
+
+1. **Better IDE Support**: Your IDE can provide autocompletion, method suggestions, and parameter hints.
+2. **Static Type Checking**: Tools like mypy can catch type errors before runtime.
+3. **Self-documenting Code**: Type hints make your code more readable and self-documenting.
+
+To use type hints with Chain DB:
+
+1. Extend the provided base model classes:
+
+```python
+from chain_db import TableModel, TableDocModel
+
+# For tables
+class UserTable(TableModel):
+    def __init__(self):
+        super().__init__()
+        # Add custom properties
+        self.user_count = 0
+
+# For table documents
+class UserDoc(TableDocModel):
+    def __init__(self):
+        super().__init__()
+        # Add custom properties
+        self.last_accessed = None
+```
+
+2. Pass your model class as the second parameter to `get_table`:
+
+```python
+# Get a table with type casting
+user_table = await db.get_table("users", UserTable)
+```
+
+3. Now you can use your table with full type support:
+
+```python
+# Your IDE will provide autocompletion and type checking for all methods
+user_table.current_doc["name"] = "John"
+user_id = user_table.get_current_doc_id()
+users = await user_table.find_where({"active": True})
+```
+
+The base model classes (`TableModel` and `TableDocModel`) provide type hints for all the methods available in the Chain DB library. At runtime, the actual implementation of these methods is provided by the library.
 
 ### Setup Development Environment
 
