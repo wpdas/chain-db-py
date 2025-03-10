@@ -48,14 +48,14 @@ greeting_table = await db.get_table("greeting")
 print(greeting_table.current_doc)  # e.g., {"greeting": "Hello"}
 ```
 
-### Using Type Hints with Model Classes
+### Using Type Hints with Model Classes (as schemas)
 
-You can define model classes to get better type hints and IDE support. Chain DB provides base model classes that you can extend:
+You can define model classes (as schemas) to get better type hints and IDE support. Chain DB provides base model classes that you can extend:
 
 ```python
 from chain_db import TableModel, connect, Connection
 
-# Define a model class by extending TableModel
+# Define a model class/schema by extending TableModel
 class GreetingTable(TableModel):
     def __init__(self):
         super().__init__()  # Initialize the base class
@@ -70,7 +70,7 @@ connection = Connection(
 )
 db = await connect(connection)
 
-# Get a table with type casting using the model class
+# Get a table with type casting using the model class (serves as a schema for the table also)
 greeting_table = await db.get_table("greeting", GreetingTable)
 
 # Now your IDE will provide autocompletion and type checking
@@ -198,7 +198,7 @@ You can also use model classes with queries for better type hints:
 ```python
 from chain_db import TableModel
 
-# Define a model class for your user table by extending TableModel
+# Define a model class/schema for your user table by extending TableModel
 class UserTable(TableModel):
     def __init__(self):
         super().__init__()
@@ -273,7 +273,7 @@ await greeting_table.refetch()
 import asyncio
 from chain_db import connect, Connection, EventTypes, TableModel
 
-# Define a model class for your table by extending TableModel
+# Define a model class/schema for your table by extending TableModel
 class GreetingTable(TableModel):
     def __init__(self):
         super().__init__()  # Initialize the base class
@@ -359,12 +359,12 @@ Chain DB Python client supports type hints through Python's typing system. This 
 
 To use type hints with Chain DB:
 
-1. Extend the provided base model classes:
+1. Extend the provided base model classes (classes here are like the table schema):
 
 ```python
 from chain_db import TableModel, TableDocModel
 
-# For tables
+# For tables (table schema)
 class UserTable(TableModel):
     def __init__(self):
         super().__init__()
